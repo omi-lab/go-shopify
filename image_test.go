@@ -2,6 +2,7 @@ package goshopify
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -199,5 +200,135 @@ func TestImageDelete(t *testing.T) {
 	err := client.Image.Delete(1, 1)
 	if err != nil {
 		t.Errorf("Image.Delete returned error: %v", err)
+	}
+}
+
+func TestImageListMetafields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields.json", client.pathPrefix),
+		httpmock.NewStringResponder(200, `{"metafields": [{"id":1},{"id":2}]}`))
+
+	metafields, err := client.Image.ListMetafields(1, nil)
+	if err != nil {
+		t.Errorf("Image.ListMetafields() returned error: %v", err)
+	}
+
+	expected := []Metafield{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(metafields, expected) {
+		t.Errorf("Image.ListMetafields() returned %+v, expected %+v", metafields, expected)
+	}
+}
+
+func TestImageCountMetafields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields/count.json", client.pathPrefix),
+		httpmock.NewStringResponder(200, `{"count": 3}`))
+
+	params := map[string]string{"created_at_min": "2016-01-01T00:00:00Z"}
+	httpmock.RegisterResponderWithQuery(
+		"GET",
+		fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields/count.json", client.pathPrefix),
+		params,
+		httpmock.NewStringResponder(200, `{"count": 2}`))
+
+	cnt, err := client.Image.CountMetafields(1, nil)
+	if err != nil {
+		t.Errorf("Image.CountMetafields() returned error: %v", err)
+	}
+
+	expected := 3
+	if cnt != expected {
+		t.Errorf("Image.CountMetafields() returned %d, expected %d", cnt, expected)
+	}
+
+	date := time.Date(2016, time.January, 1, 0, 0, 0, 0, time.UTC)
+	cnt, err = client.Image.CountMetafields(1, CountOptions{CreatedAtMin: date})
+	if err != nil {
+		t.Errorf("Image.CountMetafields() returned error: %v", err)
+	}
+
+	expected = 2
+	if cnt != expected {
+		t.Errorf("Image.CountMetafields() returned %d, expected %d", cnt, expected)
+	}
+}
+
+func TestImageGetMetafield(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields/2.json", client.pathPrefix),
+		httpmock.NewStringResponder(200, `{"metafield": {"id":2}}`))
+
+	metafield, err := client.Image.GetMetafield(1, 2, nil)
+	if err != nil {
+		t.Errorf("Image.GetMetafield() returned error: %v", err)
+	}
+
+	expected := &Metafield{ID: 2}
+	if !reflect.DeepEqual(metafield, expected) {
+		t.Errorf("Image.GetMetafield() returned %+v, expected %+v", metafield, expected)
+	}
+}
+
+func TestImageCreateMetafield(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields.json", client.pathPrefix),
+		httpmock.NewBytesResponder(200, loadFixture("metafield.json")))
+
+	metafield := Metafield{
+		Key:       "app_key",
+		Value:     "app_value",
+		Type:      MetafieldTypeSingleLineTextField,
+		Namespace: "affiliates",
+	}
+
+	returnedMetafield, err := client.Image.CreateMetafield(1, metafield)
+	if err != nil {
+		t.Errorf("Image.CreateMetafield() returned error: %v", err)
+	}
+
+	MetafieldTests(t, *returnedMetafield)
+}
+
+func TestImageUpdateMetafield(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder("PUT", fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields/2.json", client.pathPrefix),
+		httpmock.NewBytesResponder(200, loadFixture("metafield.json")))
+
+	metafield := Metafield{
+		ID:        2,
+		Key:       "app_key",
+		Value:     "app_value",
+		Type:      MetafieldTypeSingleLineTextField,
+		Namespace: "affiliates",
+	}
+
+	returnedMetafield, err := client.Image.UpdateMetafield(1, metafield)
+	if err != nil {
+		t.Errorf("Image.UpdateMetafield() returned error: %v", err)
+	}
+
+	MetafieldTests(t, *returnedMetafield)
+}
+
+func TestImageDeleteMetafield(t *testing.T) {
+	setup()
+	defer teardown()
+
+	httpmock.RegisterResponder("DELETE", fmt.Sprintf("https://fooshop.myshopify.com/%s/product_images/1/metafields/2.json", client.pathPrefix),
+		httpmock.NewStringResponder(200, "{}"))
+
+	err := client.Image.DeleteMetafield(1, 2)
+	if err != nil {
+		t.Errorf("Image.DeleteMetafield() returned error: %v", err)
 	}
 }

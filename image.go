@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const productImagesResourceName = "product_images"
+
 // ImageService is an interface for interacting with the image endpoints
 // of the Shopify API.
 // See https://help.shopify.com/api/reference/product_image
@@ -15,6 +17,9 @@ type ImageService interface {
 	Create(int64, Image) (*Image, error)
 	Update(int64, Image) (*Image, error)
 	Delete(int64, int64) error
+
+	// MetafieldsService used for Image resource to communicate with Metafields resource
+	MetafieldsService
 }
 
 // ImageServiceOp handles communication with the image related methods of
@@ -104,4 +109,40 @@ func (s *ImageServiceOp) Update(productID int64, image Image) (*Image, error) {
 // Delete an existing image
 func (s *ImageServiceOp) Delete(productID int64, imageID int64) error {
 	return s.client.Delete(fmt.Sprintf("%s/%d/images/%d.json", productsBasePath, productID, imageID))
+}
+
+// ListMetafields for an image
+func (s *ImageServiceOp) ListMetafields(imageID int64, options interface{}) ([]Metafield, error) {
+	metafieldService := &MetafieldServiceOp{client: s.client, resource: productImagesResourceName, resourceID: imageID}
+	return metafieldService.List(options)
+}
+
+// Count metafields for an image
+func (s *ImageServiceOp) CountMetafields(imageID int64, options interface{}) (int, error) {
+	metafieldService := &MetafieldServiceOp{client: s.client, resource: productImagesResourceName, resourceID: imageID}
+	return metafieldService.Count(options)
+}
+
+// GetMetafield for an image
+func (s *ImageServiceOp) GetMetafield(imageID int64, metafieldID int64, options interface{}) (*Metafield, error) {
+	metafieldService := &MetafieldServiceOp{client: s.client, resource: productImagesResourceName, resourceID: imageID}
+	return metafieldService.Get(metafieldID, options)
+}
+
+// CreateMetafield for an image
+func (s *ImageServiceOp) CreateMetafield(imageID int64, metafield Metafield) (*Metafield, error) {
+	metafieldService := &MetafieldServiceOp{client: s.client, resource: productImagesResourceName, resourceID: imageID}
+	return metafieldService.Create(metafield)
+}
+
+// UpdateMetafield for an image
+func (s *ImageServiceOp) UpdateMetafield(imageID int64, metafield Metafield) (*Metafield, error) {
+	metafieldService := &MetafieldServiceOp{client: s.client, resource: productImagesResourceName, resourceID: imageID}
+	return metafieldService.Update(metafield)
+}
+
+// DeleteMetafield for an image
+func (s *ImageServiceOp) DeleteMetafield(imageID int64, metafieldID int64) error {
+	metafieldService := &MetafieldServiceOp{client: s.client, resource: productImagesResourceName, resourceID: imageID}
+	return metafieldService.Delete(metafieldID)
 }
