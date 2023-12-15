@@ -627,6 +627,8 @@ func (c *Client) createAndDoGetHeaders(method, relPath string, data, options, re
 
 	relPath = path.Join(c.pathPrefix, relPath)
 	req, err := c.NewRequest(method, relPath, data, options)
+	fmt.Printf("%#v\n", data)
+	fmt.Printf("%s\n", req.URL.String())
 	fmt.Printf("%#v\n", req)
 	if err != nil {
 		return nil, err
